@@ -1,0 +1,11 @@
+{
+  "name": "aethered-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix apps/admin_dashboard run dev",
+    "build": "npm --prefix apps/admin_dashboard run build",
+    "start": "npm --prefix apps/admin_dashboard run start",
+    "lint": "npm --prefix apps/admin_dashboard run lint"
+  }
+}
