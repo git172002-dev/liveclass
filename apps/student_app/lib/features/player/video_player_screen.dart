@@ -168,10 +168,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
         _saveProgressAndExit();
-        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.black,
