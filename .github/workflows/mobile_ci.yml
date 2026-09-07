@@ -33,4 +33,4 @@ jobs:
 
       - name: Analyze Flutter Code
         working-directory: apps/student_app
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: flutter analyze --no-fatal-infos
