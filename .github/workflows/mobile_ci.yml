@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-mobile:
     name: Build & Validate Mobile App (Android & iOS)
@@ -58,3 +61,16 @@ jobs:
         with:
           name: aethered-student-app-apk
           path: apps/student_app/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Prepare Named Release APK
+        run: cp apps/student_app/build/app/outputs/flutter-apk/app-release.apk aethered-student-app-v1.apk
+
+      - name: Publish/Update GitHub Release APK
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0
+          name: "AetherEd Student Mobile & Tablet App v1.0.0"
+          files: aethered-student-app-v1.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

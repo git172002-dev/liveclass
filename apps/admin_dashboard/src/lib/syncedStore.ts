@@ -365,9 +365,112 @@ class SyncedDataStore {
     return {
       student,
       activeSubscription: activeSub,
-      courses: studentCourses,
+      courses: studentCourses.length > 0 ? studentCourses : allCourses,
       isExpired,
     };
+  }
+
+  // --- Dynamic OTP Generation & Verification ---
+  public requestOtp(mobile: string): string {
+    const clean = mobile.replace(/\s+/g, '');
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem(`aethered_otp_${clean}`, otp);
+      } catch (e) {
+        console.warn('sessionStorage not accessible', e);
+      }
+    }
+    // Log security SMS event
+    this.logAdminAction({
+      user_id: 'sys-otp-gateway',
+      user_name: 'AetherEd 2FA Gateway',
+      role: 'System Security',
+      action: 'Dynamic SMS OTP Dispatched',
+      details: `Generated 6-digit code [${otp}] dispatched for mobile: ${clean}`,
+      ip_address: '103.21.244.12',
+      status: 'success',
+    });
+    return otp;
+  }
+
+  public getActiveOtp(mobile: string): string | null {
+    const clean = mobile.replace(/\s+/g, '');
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem(`aethered_otp_${clean}`);
+    }
+    return null;
+  }
+
+  public verifyOtp(mobile: string, enteredOtp: string): boolean {
+    const clean = mobile.replace(/\s+/g, '');
+    const stored = this.getActiveOtp(clean);
+    if (stored && stored === enteredOtp) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(`aethered_otp_${clean}`);
+      }
+      return true;
+    }
+    // Universal demo fallback
+    if (enteredOtp === '123456') return true;
+    return false;
+  }
+
+  public registerNewStudent(mobile: string, name?: string): Student {
+    const clean = mobile.replace(/\s+/g, '');
+    const students = this.getStudents();
+    const existing = students.find(
+      (s) => s.mobile_number === clean || clean.endsWith(s.mobile_number.replace('+91', ''))
+    );
+    if (existing) return existing;
+
+    const lastDigits = clean.slice(-4);
+    const newStudent: Student = {
+      id: `s-${Date.now()}`,
+      name: name?.trim() || `Student ${lastDigits}`,
+      mobile_number: clean,
+      email: `${clean.replace('+', '')}@student.aethered.com`,
+      status: 'active',
+      created_at: new Date().toISOString(),
+      last_login: new Date().toISOString(),
+      assigned_courses_count: 3,
+      active_plan_name: 'All-Science & Math Super Bundle',
+    };
+
+    const updatedStudents = [newStudent, ...students];
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(updatedStudents));
+    }
+
+    // Auto-create active subscription
+    const subs = this.getSubscriptions();
+    const newSub: Subscription = {
+      id: `sub-${Date.now()}`,
+      student_id: newStudent.id,
+      student_name: newStudent.name,
+      mobile_number: clean,
+      plan_name: 'All-Science & Math Super Bundle',
+      start_date: new Date().toISOString().split('T')[0],
+      expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'active',
+    };
+    const updatedSubs = [newSub, ...subs];
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.SUBSCRIPTIONS, JSON.stringify(updatedSubs));
+    }
+
+    this.logAdminAction({
+      user_id: newStudent.id,
+      user_name: newStudent.name,
+      role: 'Self-Registered Student',
+      action: 'Student 2FA Onboarded',
+      details: `New student account activated with All-Science Bundle access for ${clean}`,
+      ip_address: '103.21.244.12',
+      status: 'success',
+    });
+
+    this.broadcast();
+    return newStudent;
   }
 
   // --- Admin Users, Roles & Permissions ---
@@ -474,6 +577,10 @@ export function useSyncedStore() {
     updateLesson: (courseId: string, lesson: Lesson) => syncedStore.updateLesson(courseId, lesson),
     deleteLesson: (courseId: string, lessonId: string) => syncedStore.deleteLesson(courseId, lessonId),
     getPurchasedCourses: (mobile: string) => syncedStore.getPurchasedCoursesForStudent(mobile),
+    requestOtp: (mobile: string) => syncedStore.requestOtp(mobile),
+    verifyOtp: (mobile: string, enteredOtp: string) => syncedStore.verifyOtp(mobile, enteredOtp),
+    getActiveOtp: (mobile: string) => syncedStore.getActiveOtp(mobile),
+    registerNewStudent: (mobile: string, name?: string) => syncedStore.registerNewStudent(mobile, name),
     updateAdminPermissions: (adminId: string, permissions: AdminUser['permissions']) =>
       syncedStore.updateAdminPermissions(adminId, permissions),
     logAdminAction: (log: Omit<AdminAuditLog, 'id' | 'timestamp'>) => syncedStore.logAdminAction(log),

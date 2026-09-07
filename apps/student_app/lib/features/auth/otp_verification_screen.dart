@@ -7,13 +7,15 @@ import '../../core/services/mock_data_service.dart';
 import '../home/home_screen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
-  final StudentModel student;
+  final StudentModel? student;
   final String phoneNumber;
+  final String generatedOtp;
 
   const OtpVerificationScreen({
     super.key,
-    required this.student,
+    this.student,
     required this.phoneNumber,
+    required this.generatedOtp,
   });
 
   @override
@@ -24,6 +26,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final List<TextEditingController> _otpControllers = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
+  late String _currentOtp;
   int _resendCountdown = 60;
   Timer? _timer;
   bool _isLoading = false;
@@ -32,8 +35,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   @override
   void initState() {
     super.initState();
+    _currentOtp = widget.generatedOtp;
     _startTimer();
-    // Default mock demo code: 1 2 3 4 5 6
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNodes[0].requestFocus();
     });
@@ -55,6 +58,28 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     });
   }
 
+  void _resendCode() {
+    final newOtp = MockDataService().requestOtp(widget.phoneNumber);
+    setState(() {
+      _currentOtp = newOtp;
+      _errorMessage = null;
+    });
+    for (final c in _otpControllers) {
+      c.clear();
+    }
+    _focusNodes[0].requestFocus();
+    _startTimer();
+  }
+
+  void _fillOtp(String code) {
+    final chars = code.split('');
+    for (int i = 0; i < 6 && i < chars.length; i++) {
+      _otpControllers[i].text = chars[i];
+    }
+    _focusNodes[5].requestFocus();
+    _verifyOtp();
+  }
+
   void _verifyOtp() {
     final enteredOtp = _otpControllers.map((c) => c.text).join();
 
@@ -71,15 +96,18 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     });
 
     Future.delayed(const Duration(milliseconds: 600), () {
-      // Demo code: '123456' (or any 6 digits starting with not 000000)
-      if (enteredOtp == '000000') {
+      final isValid = MockDataService().verifyOtp(widget.phoneNumber, enteredOtp) ||
+          enteredOtp == _currentOtp;
+
+      if (!isValid) {
         setState(() {
           _isLoading = false;
-          _errorMessage = AppStrings.errInvalidOtp;
+          _errorMessage = 'Invalid verification code. Please enter the dynamic 6-digit OTP sent to your phone.';
         });
       } else {
-        // Authenticated successfully!
-        MockDataService().currentStudent = widget.student;
+        // Authenticated successfully! Auto-enroll new student or attach existing
+        final student = widget.student ?? MockDataService().getOrCreateStudent(widget.phoneNumber);
+        MockDataService().currentStudent = student;
 
         Navigator.of(context).pushAndRemoveUntil(
           PageRouteBuilder(
@@ -115,12 +143,109 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
+              // Incoming SMS Notification Banner
+              Container(
+                margin: const EdgeInsets.only(bottom: 22),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0F1E36), Color(0xFF13233F)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.cyan.withOpacity(0.35)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.cyan.withOpacity(0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.cyan.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.mark_chat_unread_rounded, color: AppTheme.cyan, size: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'MESSAGES • AETHERED 2FA',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
+                            color: AppTheme.cyan,
+                          ),
+                        ),
+                        const Spacer(),
+                        const Text('just now', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 13, color: Colors.white, height: 1.4),
+                        children: [
+                          const TextSpan(text: 'Your 2-Step verification code is '),
+                          TextSpan(
+                            text: _currentOtp,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                              letterSpacing: 2,
+                              color: AppTheme.cyan,
+                            ),
+                          ),
+                          const TextSpan(text: '. Valid for 5 mins. Do not share this OTP with anyone.'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () => _fillOtp(_currentOtp),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cyan.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.cyan.withOpacity(0.4)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.touch_app_rounded, size: 14, color: AppTheme.cyan),
+                            SizedBox(width: 6),
+                            Text(
+                              'Tap to Auto-fill Code',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.cyan,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               const Text(
                 AppStrings.verifyOtpTitle,
                 style: TextStyle(
@@ -143,7 +268,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
               // Error Banner (if OTP invalid)
               if (_errorMessage != null) ...[
@@ -217,27 +342,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 }),
               ),
 
-              const SizedBox(height: 24),
-
-              // Auto-fill test code button
-              Center(
-                child: TextButton.icon(
-                  onPressed: () {
-                    const sample = ['1', '2', '3', '4', '5', '6'];
-                    for (int i = 0; i < 6; i++) {
-                      _otpControllers[i].text = sample[i];
-                    }
-                    _focusNodes[5].requestFocus();
-                  },
-                  icon: const Icon(Icons.flash_on_rounded, size: 14, color: AppTheme.cyan),
-                  label: const Text(
-                    'Auto-fill Demo Code (123456)',
-                    style: TextStyle(fontSize: 12, color: AppTheme.cyan),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Resend countdown
               Center(
@@ -247,7 +352,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                       )
                     : TextButton(
-                        onPressed: _startTimer,
+                        onPressed: _resendCode,
                         child: const Text(
                           AppStrings.resendOtp,
                           style: TextStyle(
@@ -259,7 +364,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       ),
               ),
 
-              const Spacer(),
+              const SizedBox(height: 32),
 
               // Verify CTA
               SizedBox(

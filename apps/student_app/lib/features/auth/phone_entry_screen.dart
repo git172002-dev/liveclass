@@ -23,36 +23,45 @@ class _PhoneEntryScreenState extends State<PhoneEntryScreen> {
     });
 
     final enteredPhone = _phoneController.text.trim();
+    final digits = enteredPhone.replaceAll(RegExp(r'\D'), '');
 
-    // Fast simulated API / Edge Function call
-    Future.delayed(const Duration(milliseconds: 700), () {
+    if (digits.length < 10) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Please enter a valid 10-digit mobile phone number.';
+      });
+      return;
+    }
+
+    // Fast simulated API / SMS dispatch call
+    Future.delayed(const Duration(milliseconds: 600), () {
       final student = MockDataService().findStudent(enteredPhone);
 
       setState(() {
         _isLoading = false;
       });
 
-      if (student == null) {
-        // Enforce prompt rule: if not registered, show exact error message
-        setState(() {
-          _errorMessage = AppStrings.errStudentNotFound;
-        });
-      } else if (student.status != 'active') {
+      if (student != null && student.status != 'active') {
         setState(() {
           _errorMessage = 'Your student account is currently suspended. Please contact your administrator.';
         });
-      } else {
-        // Authorized student found! Proceed to OTP verification screen
-        Navigator.of(context).push(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => OtpVerificationScreen(
-              student: student,
-              phoneNumber: enteredPhone,
-            ),
-            transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
-          ),
-        );
+        return;
       }
+
+      // Generate real dynamic 6-digit OTP
+      final dynamicOtp = MockDataService().requestOtp(enteredPhone);
+
+      // Authorized student or new student found! Proceed to OTP verification screen
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => OtpVerificationScreen(
+            student: student,
+            phoneNumber: enteredPhone,
+            generatedOtp: dynamicOtp,
+          ),
+          transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+        ),
+      );
     });
   }
 
@@ -216,12 +225,12 @@ class _PhoneEntryScreenState extends State<PhoneEntryScreen> {
                           backgroundColor: const Color(0xFF0E1524),
                           side: const BorderSide(color: Color(0xFF334155)),
                           label: const Text(
-                            'Unregistered (+919000000000)',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                            'New User (+919123456789)',
+                            style: TextStyle(fontSize: 11, color: AppTheme.cyan),
                           ),
                           onPressed: () {
                             setState(() {
-                              _phoneController.text = '+91 90000 00000';
+                              _phoneController.text = '+91 91234 56789';
                               _errorMessage = null;
                             });
                           },

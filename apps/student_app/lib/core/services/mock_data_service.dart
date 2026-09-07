@@ -1,3 +1,4 @@
+import 'dart:math';
 import '../models/student_models.dart';
 
 class MockDataService {
@@ -7,6 +8,9 @@ class MockDataService {
 
   // Current logged in student
   StudentModel? currentStudent;
+
+  // Active OTP storage: mobile -> generated 6-digit OTP
+  final Map<String, String> _activeOtps = {};
 
   // Registered authorized students
   final List<StudentModel> registeredStudents = [
@@ -27,6 +31,15 @@ class MockDataService {
       status: 'active',
       activePlanName: 'Physics Master Pass',
       expiryDate: DateTime.now().subtract(const Duration(days: 10)), // Expired!
+    ),
+    StudentModel(
+      id: 's0000000-0000-0000-0000-000000000004',
+      name: 'Neha Sundaram',
+      mobileNumber: '+919876543213',
+      email: 'neha.s@example.com',
+      status: 'active',
+      activePlanName: 'Physics Master Pass',
+      expiryDate: DateTime.now().add(const Duration(days: 90)),
     ),
   ];
 
@@ -147,22 +160,86 @@ class MockDataService {
     ),
   ];
 
-  /// Find pre-registered student by mobile number
+  /// Find student by mobile number
   StudentModel? findStudent(String mobile) {
     final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
     for (final s in registeredStudents) {
-      if (s.mobileNumber == cleanMobile || cleanMobile.endsWith(s.mobileNumber.replaceAll('+91', ''))) {
+      if (s.mobileNumber == cleanMobile ||
+          cleanMobile.endsWith(s.mobileNumber.replaceAll('+91', '')) ||
+          s.mobileNumber.replaceAll('+91', '') == cleanMobile.replaceAll('+91', '')) {
         return s;
       }
     }
     return null;
   }
 
+  /// Request a dynamic 6-digit OTP for any mobile number
+  String requestOtp(String mobile) {
+    final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
+    // Generate true random 6-digit OTP (100000 - 999999)
+    final random = Random();
+    final otp = (100000 + random.nextInt(900000)).toString();
+    _activeOtps[cleanMobile] = otp;
+    return otp;
+  }
+
+  /// Get active OTP for verification notification banner
+  String? getActiveOtp(String mobile) {
+    final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
+    return _activeOtps[cleanMobile];
+  }
+
+  /// Verify entered OTP against dynamic code (or fallback demo code)
+  bool verifyOtp(String mobile, String enteredOtp) {
+    final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
+    final storedOtp = _activeOtps[cleanMobile];
+    if (storedOtp != null && storedOtp == enteredOtp) {
+      _activeOtps.remove(cleanMobile);
+      return true;
+    }
+    // Universal demo fallback
+    if (enteredOtp == '123456') {
+      return true;
+    }
+    return false;
+  }
+
+  /// Get existing student or auto-register a new user with active courses
+  StudentModel getOrCreateStudent(String mobile, {String? name}) {
+    final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
+    var student = findStudent(cleanMobile);
+    if (student == null) {
+      final lastDigits = cleanMobile.length >= 4
+          ? cleanMobile.substring(cleanMobile.length - 4)
+          : cleanMobile;
+      final displayName = (name != null && name.trim().isNotEmpty)
+          ? name.trim()
+          : 'Student $lastDigits';
+
+      student = StudentModel(
+        id: 's-${DateTime.now().millisecondsSinceEpoch}',
+        name: displayName,
+        mobileNumber: cleanMobile,
+        email: '${cleanMobile.replaceAll('+', '')}@student.aethered.com',
+        status: 'active',
+        activePlanName: 'All-Science & Math Super Bundle',
+        expiryDate: DateTime.now().add(const Duration(days: 365)),
+      );
+      registeredStudents.add(student);
+    }
+    currentStudent = student;
+    return student;
+  }
+
   /// Get only purchased/enrolled courses for the given student
   List<CourseModel> getPurchasedCourses(StudentModel student) {
     if (!student.isAccessActive) return [];
     final plan = student.activePlanName?.toLowerCase() ?? '';
-    if (plan.contains('bundle') || plan.contains('super') || plan.contains('all-science')) {
+    if (plan.contains('bundle') ||
+        plan.contains('super') ||
+        plan.contains('all-science') ||
+        plan.contains('starter') ||
+        plan.contains('all')) {
       return courses;
     } else if (plan.contains('physics')) {
       return courses.where((c) => c.subject.toLowerCase() == 'physics').toList();
@@ -171,7 +248,7 @@ class MockDataService {
     } else if (plan.contains('math')) {
       return courses.where((c) => c.subject.toLowerCase() == 'mathematics').toList();
     }
-    return [courses.first];
+    return courses;
   }
 
   /// Get the lesson the student should continue

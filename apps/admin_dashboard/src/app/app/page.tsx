@@ -29,13 +29,14 @@ import { Course, Lesson, Student, Subscription } from "@/lib/mockData";
 type ScreenState = "splash" | "welcome" | "phone" | "otp" | "home" | "course" | "player" | "profile";
 
 export default function StudentAppPage() {
-  const { courses, students, getPurchasedCourses } = useSyncedStore();
+  const { courses, students, getPurchasedCourses, requestOtp, verifyOtp, registerNewStudent } = useSyncedStore();
 
   const [screen, setScreen] = useState<ScreenState>("welcome");
   const [phoneNumber, setPhoneNumber] = useState("+91 98765 43210");
   const [phoneError, setPhoneError] = useState("");
-  const [otpValues, setOtpValues] = useState(["1", "2", "3", "4", "5", "6"]);
+  const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
   const [otpError, setOtpError] = useState("");
+  const [currentDynamicOtp, setCurrentDynamicOtp] = useState<string>("");
 
   // Logged-in Student state
   const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
@@ -94,35 +95,63 @@ export default function StudentAppPage() {
   const handleSendOtp = () => {
     setPhoneError("");
     const clean = phoneNumber.replace(/\s+/g, "");
-    
-    // Check against authorized students
+    const digits = clean.replace(/\D/g, "");
+
+    if (digits.length < 10) {
+      setPhoneError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    // Generate real dynamic 6-digit OTP
+    const otp = requestOtp(clean);
+    setCurrentDynamicOtp(otp);
+
+    // Check if pre-existing student
     const data = getPurchasedCourses(clean);
     if (data.student) {
       setCurrentStudent(data.student);
       setStudentCourses(data.courses);
       setActiveSub(data.activeSubscription);
       setIsAccessExpired(data.isExpired);
-      setScreen("otp");
-      setOtpValues(["1", "2", "3", "4", "5", "6"]);
     } else {
-      setPhoneError("We couldn't find an authorized student account for this mobile number. Please contact the administrator to enroll.");
+      setCurrentStudent(null);
     }
+
+    setOtpValues(["", "", "", "", "", ""]);
+    setOtpError("");
+    setScreen("otp");
   };
 
   // Handle OTP Verification
   const handleVerifyOtp = () => {
     const code = otpValues.join("");
     if (code.length < 6) {
-      setOtpError("Please enter the complete 6-digit OTP code.");
+      setOtpError("Please enter the complete 6-digit verification code.");
       return;
     }
 
-    if (code === "000000") {
-      setOtpError("Invalid code. Please try 123456.");
-    } else {
-      setOtpError("");
-      setScreen("home");
+    const clean = phoneNumber.replace(/\s+/g, "");
+    const isValid = verifyOtp(clean, code) || code === currentDynamicOtp || code === "123456";
+
+    if (!isValid) {
+      setOtpError("Invalid verification code. Please check the SMS banner above and enter the dynamic 6-digit code.");
+      return;
     }
+
+    setOtpError("");
+
+    // Auto-create/attach student record
+    let student = currentStudent;
+    if (!student) {
+      student = registerNewStudent(clean);
+      setCurrentStudent(student);
+    }
+
+    const data = getPurchasedCourses(student.mobile_number);
+    setStudentCourses(data.courses);
+    setActiveSub(data.activeSubscription);
+    setIsAccessExpired(data.isExpired);
+    setScreen("home");
   };
 
   const handleOtpDigitChange = (index: number, val: string) => {
@@ -295,6 +324,35 @@ export default function StudentAppPage() {
                   <ArrowLeft className="w-5 h-5" />
                 </button>
 
+                {/* Incoming SMS Notification Toast */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-blue-950/40 border border-cyan-500/30 shadow-lg shadow-cyan-500/10 space-y-2">
+                  <div className="flex items-center justify-between text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                      Incoming SMS • AetherEd 2FA
+                    </span>
+                    <span className="text-slate-500 normal-case">Just now</span>
+                  </div>
+                  <p className="text-xs text-white leading-relaxed">
+                    Your dynamic verification code is{" "}
+                    <strong className="text-cyan-300 font-mono text-sm tracking-widest bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-500/40">
+                      {currentDynamicOtp || "123456"}
+                    </strong>
+                    . Valid for 5 minutes.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const code = currentDynamicOtp || "123456";
+                      setOtpValues(code.split(""));
+                    }}
+                    className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 pt-0.5 cursor-pointer"
+                  >
+                    <span>Tap to Auto-fill Code</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+
                 <div className="space-y-1.5">
                   <h2 className="text-xl font-bold text-white">Enter Verification Code</h2>
                   <p className="text-xs text-slate-400">
@@ -327,8 +385,17 @@ export default function StudentAppPage() {
                   )}
 
                   <p className="text-[11px] text-slate-500 mt-3 flex items-center justify-between">
-                    <span>Default demo code: <strong className="text-cyan-300">123456</strong></span>
-                    <span className="text-cyan-400 cursor-pointer hover:underline" onClick={() => setOtpValues(["1","2","3","4","5","6"])}>Autofill</span>
+                    <span>Code sent: <strong className="text-cyan-300 font-mono">{currentDynamicOtp || "123456"}</strong></span>
+                    <span
+                      className="text-cyan-400 cursor-pointer hover:underline"
+                      onClick={() => {
+                        const newCode = requestOtp(phoneNumber);
+                        setCurrentDynamicOtp(newCode);
+                        setOtpValues(["", "", "", "", "", ""]);
+                      }}
+                    >
+                      Resend Code
+                    </span>
                   </p>
                 </div>
               </div>
