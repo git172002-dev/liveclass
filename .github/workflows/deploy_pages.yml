@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -31,19 +31,16 @@ jobs:
           cache: 'npm'
           cache-dependency-path: apps/admin_dashboard/package.json
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Build Next.js Admin Dashboard
+      - name: Install Dependencies
+        working-directory: apps/admin_dashboard
+        run: npm ci || npm install
+
+      - name: Build & Export Next.js (Dashboard + Student App)
         working-directory: apps/admin_dashboard
         run: |
-          npm ci || npm install
           npm run build
           touch out/.nojekyll
         env:
@@ -51,14 +48,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock-anon-key' }}
 
-      - name: Build Flutter Student App for Web
-        working-directory: apps/student_app
-        run: |
-          flutter create --org com.aethered --project-name aethered_student_app --platforms web .
-          flutter pub get
-          flutter build web --base-href "/liveclass/app/"
-          mkdir -p ../admin_dashboard/out/app
-          cp -r build/web/* ../admin_dashboard/out/app/
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: apps/admin_dashboard/out
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3
