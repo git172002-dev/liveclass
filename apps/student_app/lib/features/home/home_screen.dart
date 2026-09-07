@@ -6,6 +6,7 @@ import '../../core/services/mock_data_service.dart';
 import '../courses/course_detail_screen.dart';
 import '../player/video_player_screen.dart';
 import '../profile/profile_screen.dart';
+import '../common/responsive_layout.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +23,99 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final student = _dataService.currentStudent ?? _dataService.registeredStudents[0];
     final isExpired = !student.isAccessActive;
+    final isTablet = ResponsiveLayout.isTablet(context);
+
+    if (isTablet) {
+      return Scaffold(
+        backgroundColor: AppTheme.darkBg,
+        body: SafeArea(
+          child: Row(
+            children: [
+              // Tablet / iPad Navigation Rail
+              NavigationRail(
+                backgroundColor: const Color(0xFF0B101D),
+                indicatorColor: AppTheme.cyan.withOpacity(0.15),
+                selectedIndex: _currentNavIndex,
+                onDestinationSelected: (index) {
+                  setState(() {
+                    _currentNavIndex = index;
+                  });
+                },
+                leading: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppTheme.cyan, Color(0xFF2563EB)],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.cyan.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.auto_awesome, color: Colors.black, size: 22),
+                  ),
+                ),
+                trailing: Expanded(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppTheme.success,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'SYNC',
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.success,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                destinations: const [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.home_outlined, color: Color(0xFF94A3B8)),
+                    selectedIcon: Icon(Icons.home_rounded, color: AppTheme.cyan),
+                    label: Text('Classes'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.person_outline_rounded, color: Color(0xFF94A3B8)),
+                    selectedIcon: Icon(Icons.person_rounded, color: AppTheme.cyan),
+                    label: Text('Profile'),
+                  ),
+                ],
+              ),
+              const VerticalDivider(width: 1, color: AppTheme.darkCardBorder),
+              Expanded(
+                child: _currentNavIndex == 0
+                    ? _buildHomeContent(context, student, isExpired)
+                    : const ProfileScreen(),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.darkBg,
@@ -69,7 +163,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveLayout.getHorizontalPadding(context),
+        vertical: 18,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -415,6 +512,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                );
+              }
+
+              final colCount = ResponsiveLayout.getGridColumnCount(context);
+              if (colCount > 1) {
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: purchased.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: colCount,
+                    childAspectRatio: 2.3,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemBuilder: (context, index) {
+                    final course = purchased[index];
+                    return _buildCourseCard(context, course, isExpired);
+                  },
                 );
               }
 

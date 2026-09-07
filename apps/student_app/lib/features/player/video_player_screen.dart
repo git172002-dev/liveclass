@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/models/student_models.dart';
 import '../../core/services/mock_data_service.dart';
+import '../common/responsive_layout.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final LessonModel lesson;
@@ -135,9 +136,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       ]);
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     } else {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-      ]);
+      if (ResponsiveLayout.isTablet(context)) {
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      } else {
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+        ]);
+      }
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     }
   }
@@ -183,7 +192,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               Expanded(
                 flex: _isFullscreen ? 1 : 0,
                 child: Container(
-                  height: _isFullscreen ? double.infinity : 240,
+                  height: _isFullscreen
+                      ? double.infinity
+                      : (ResponsiveLayout.isLandscapeTablet(context)
+                          ? 400
+                          : (ResponsiveLayout.isTablet(context) ? 320 : 240)),
                   width: double.infinity,
                   color: Colors.black,
                   child: Stack(

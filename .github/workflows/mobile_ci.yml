@@ -1,4 +1,4 @@
-name: Build Flutter Android APK
+name: Build Flutter Mobile & Tablet App (Android & iOS)
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
-    name: Build Android APK
+  build-mobile:
+    name: Build & Validate Mobile App (Android & iOS)
     runs-on: ubuntu-latest
 
     steps:
@@ -26,9 +26,16 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Generate Android Project Scaffolding
+      - name: Generate Android & iOS Native Scaffolding
         working-directory: apps/student_app
-        run: flutter create --org com.aethered --project-name aethered_student_app --platforms android .
+        run: |
+          flutter create --org com.aethered --project-name aethered_student_app --platforms android,ios .
+
+      - name: Configure Android & iOS Tablet Multi-Screen Support
+        working-directory: apps/student_app
+        run: |
+          # Inject tablet support into AndroidManifest.xml
+          sed -i 's/<application/<supports-screens android:smallScreens="true" android:normalScreens="true" android:largeScreens="true" android:xlargeScreens="true" \/>\n    <application/' android/app/src/main/AndroidManifest.xml || true
 
       - name: Install Dependencies
         working-directory: apps/student_app
@@ -38,7 +45,11 @@ jobs:
         working-directory: apps/student_app
         run: flutter analyze --no-fatal-infos lib/
 
-      - name: Build Android APK
+      - name: Run Widget Smoke Tests
+        working-directory: apps/student_app
+        run: flutter test
+
+      - name: Build Android Release APK
         working-directory: apps/student_app
         run: flutter build apk --release
 
