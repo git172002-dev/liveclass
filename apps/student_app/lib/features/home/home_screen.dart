@@ -367,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                AppStrings.myCourses,
+                'My Purchased Courses',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
@@ -376,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Text(
-                '${_dataService.courses.length} Available',
+                '${_dataService.getPurchasedCourses(student).length} Active',
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppTheme.cyan,
@@ -388,14 +388,46 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 14),
 
           // Course Cards
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _dataService.courses.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 14),
-            itemBuilder: (context, index) {
-              final course = _dataService.courses[index];
-              return _buildCourseCard(context, course, isExpired);
+          Builder(
+            builder: (context) {
+              final purchased = _dataService.getPurchasedCourses(student);
+              if (purchased.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkCard,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppTheme.darkCardBorder),
+                  ),
+                  child: Column(
+                    children: const [
+                      Icon(Icons.video_library_outlined, size: 36, color: Color(0xFF64748B)),
+                      SizedBox(height: 8),
+                      Text(
+                        'No Purchased Courses Found',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'You are not enrolled in any active courses. Contact admin to activate your plan.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: purchased.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 14),
+                itemBuilder: (context, index) {
+                  final course = purchased[index];
+                  return _buildCourseCard(context, course, isExpired);
+                },
+              );
             },
           ),
           const SizedBox(height: 20),

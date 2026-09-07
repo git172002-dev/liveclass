@@ -158,6 +158,22 @@ class MockDataService {
     return null;
   }
 
+  /// Get only purchased/enrolled courses for the given student
+  List<CourseModel> getPurchasedCourses(StudentModel student) {
+    if (!student.isAccessActive) return [];
+    final plan = student.activePlanName?.toLowerCase() ?? '';
+    if (plan.contains('bundle') || plan.contains('super') || plan.contains('all-science')) {
+      return courses;
+    } else if (plan.contains('physics')) {
+      return courses.where((c) => c.subject.toLowerCase() == 'physics').toList();
+    } else if (plan.contains('chemistry')) {
+      return courses.where((c) => c.subject.toLowerCase() == 'chemistry').toList();
+    } else if (plan.contains('math')) {
+      return courses.where((c) => c.subject.toLowerCase() == 'mathematics').toList();
+    }
+    return [courses.first];
+  }
+
   /// Get the lesson the student should continue
   LessonModel? getContinueLesson() {
     // Default to Physics Lesson 2 (which has 18m 42s recorded)

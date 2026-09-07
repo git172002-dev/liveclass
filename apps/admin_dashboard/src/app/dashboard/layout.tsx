@@ -12,13 +12,15 @@ import {
   LogOut,
   Sparkles,
   ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { name: "Students", href: "/dashboard/students", icon: Users },
-  { name: "Courses & Lessons", href: "/dashboard/courses", icon: Video },
+  { name: "Courses & Video Portal", href: "/dashboard/courses", icon: Video },
   { name: "Subscriptions & Access", href: "/dashboard/subscriptions", icon: KeyRound },
+  { name: "Staff Permissions & Audits", href: "/dashboard/permissions", icon: ShieldCheck },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
