@@ -6,6 +6,8 @@ import '../../core/services/mock_data_service.dart';
 import '../courses/course_detail_screen.dart';
 import '../player/video_player_screen.dart';
 import '../profile/profile_screen.dart';
+import '../live/live_class_screen.dart';
+import '../library/video_library_screen.dart';
 import '../common/responsive_layout.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -99,6 +101,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: Text('Classes'),
                   ),
                   NavigationRailDestination(
+                    icon: Icon(Icons.video_library_outlined, color: Color(0xFF94A3B8)),
+                    selectedIcon: Icon(Icons.video_library_rounded, color: AppTheme.cyan),
+                    label: Text('Library'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.videocam_outlined, color: Color(0xFF94A3B8)),
+                    selectedIcon: Icon(Icons.videocam_rounded, color: AppTheme.cyan),
+                    label: Text('Live Class'),
+                  ),
+                  NavigationRailDestination(
                     icon: Icon(Icons.person_outline_rounded, color: Color(0xFF94A3B8)),
                     selectedIcon: Icon(Icons.person_rounded, color: AppTheme.cyan),
                     label: Text('Profile'),
@@ -107,9 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const VerticalDivider(width: 1, color: AppTheme.darkCardBorder),
               Expanded(
-                child: _currentNavIndex == 0
-                    ? _buildHomeContent(context, student, isExpired)
-                    : const ProfileScreen(),
+                child: _buildNavBody(context, student, isExpired),
               ),
             ],
           ),
@@ -120,9 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppTheme.darkBg,
       body: SafeArea(
-        child: _currentNavIndex == 0
-            ? _buildHomeContent(context, student, isExpired)
-            : const ProfileScreen(),
+        child: _buildNavBody(context, student, isExpired),
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -145,6 +153,24 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'Classes',
             ),
             NavigationDestination(
+              icon: Icon(Icons.video_library_outlined, color: Color(0xFF94A3B8)),
+              selectedIcon: Icon(Icons.video_library_rounded, color: AppTheme.cyan),
+              label: 'Library',
+            ),
+            NavigationDestination(
+              icon: Badge(
+                backgroundColor: Color(0xFFEF4444),
+                smallSize: 8,
+                child: Icon(Icons.videocam_outlined, color: Color(0xFF94A3B8)),
+              ),
+              selectedIcon: Badge(
+                backgroundColor: Color(0xFFEF4444),
+                smallSize: 8,
+                child: Icon(Icons.videocam_rounded, color: AppTheme.cyan),
+              ),
+              label: 'Live Class',
+            ),
+            NavigationDestination(
               icon: Icon(Icons.person_outline_rounded, color: Color(0xFF94A3B8)),
               selectedIcon: Icon(Icons.person_rounded, color: AppTheme.cyan),
               label: 'Profile',
@@ -153,6 +179,21 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildNavBody(BuildContext context, StudentModel student, bool isExpired) {
+    switch (_currentNavIndex) {
+      case 0:
+        return _buildHomeContent(context, student, isExpired);
+      case 1:
+        return VideoLibraryScreen(onBack: () => setState(() => _currentNavIndex = 0));
+      case 2:
+        return LiveClassScreen(onBack: () => setState(() => _currentNavIndex = 0));
+      case 3:
+        return const ProfileScreen();
+      default:
+        return _buildHomeContent(context, student, isExpired);
+    }
   }
 
   Widget _buildHomeContent(BuildContext context, StudentModel student, bool isExpired) {
@@ -231,6 +272,210 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Gen Z Gamification Bar (Streaks & XP)
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0E1524),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF1E293B)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('🔥', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 6),
+                    Text(
+                      '4-DAY STREAK',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                        color: Color(0xFFF97316),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0E1524),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF1E293B)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('⚡', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 6),
+                    Text(
+                      '1,420 XP',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                        color: AppTheme.cyan,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => setState(() => _currentNavIndex = 1),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cyan.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.cyan.withOpacity(0.3)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.video_library_rounded, size: 14, color: AppTheme.cyan),
+                      SizedBox(width: 4),
+                      Text(
+                        'Video Vault',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.cyan,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Pulsing 🔴 LIVE NOW Hero Card (Zoom-Like Live Class)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFEF4444).withOpacity(0.15),
+                  const Color(0xFF0B101D),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.5)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFEF4444).withOpacity(0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.circle, size: 8, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            'LIVE CLASS STREAMING',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.8,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Row(
+                      children: [
+                        Icon(Icons.people_alt_rounded, size: 13, color: AppTheme.cyan),
+                        SizedBox(width: 4),
+                        Text(
+                          '34 Students in Room',
+                          style: TextStyle(fontSize: 11, color: AppTheme.cyan, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Physics Class 12: Electromagnetic Waves & Optics Live Doubt Solving',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Dr. Vikram Seth • Zoom/Jitsi Video Bridge Active (+50 XP)',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => setState(() => _currentNavIndex = 2),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.videocam_rounded, size: 16),
+                        label: const Text(
+                          'Join Live Classroom',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      onPressed: () => setState(() => _currentNavIndex = 1),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.cyan,
+                        side: BorderSide(color: AppTheme.cyan.withOpacity(0.5)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.video_library_rounded, size: 15),
+                      label: const Text(
+                        'Video Vault',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 20),

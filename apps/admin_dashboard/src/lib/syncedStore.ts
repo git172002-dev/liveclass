@@ -317,21 +317,26 @@ class SyncedDataStore {
   /**
    * Returns only the courses purchased by this student mobile number
    */
-  public getPurchasedCoursesForStudent(mobileNumber: string): {
+  public getPurchasedCoursesForStudent(identifier: string): {
     student: Student | null;
     activeSubscription: Subscription | null;
     courses: Course[];
     isExpired: boolean;
   } {
-    const cleanMobile = mobileNumber.replace(/\s+/g, '');
+    const isEmail = identifier.includes('@');
+    const clean = isEmail ? identifier.trim().toLowerCase() : identifier.replace(/\s+/g, '');
     const students = this.getStudents();
     const student =
-      students.find(
-        (s) =>
-          s.mobile_number === cleanMobile ||
-          cleanMobile.endsWith(s.mobile_number.replace('+91', '')) ||
-          s.mobile_number.replace('+91', '') === cleanMobile.replace('+91', '')
-      ) || null;
+      students.find((s) => {
+        if (isEmail) {
+          return s.email?.toLowerCase() === clean;
+        }
+        return (
+          s.mobile_number === clean ||
+          clean.endsWith(s.mobile_number.replace('+91', '')) ||
+          s.mobile_number.replace('+91', '') === clean.replace('+91', '')
+        );
+      }) || null;
 
     if (!student) {
       return { student: null, activeSubscription: null, courses: [], isExpired: false };
@@ -371,8 +376,9 @@ class SyncedDataStore {
   }
 
   // --- Dynamic OTP Generation & Verification ---
-  public requestOtp(mobile: string): string {
-    const clean = mobile.replace(/\s+/g, '');
+  public requestOtp(identifier: string): string {
+    const isEmail = identifier.includes('@');
+    const clean = isEmail ? identifier.trim().toLowerCase() : identifier.replace(/\s+/g, '');
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     if (typeof window !== 'undefined') {
       try {
@@ -381,29 +387,31 @@ class SyncedDataStore {
         console.warn('sessionStorage not accessible', e);
       }
     }
-    // Log security SMS event
+    // Log security OTP event
     this.logAdminAction({
       user_id: 'sys-otp-gateway',
       user_name: 'AetherEd 2FA Gateway',
       role: 'System Security',
-      action: 'Dynamic SMS OTP Dispatched',
-      details: `Generated 6-digit code [${otp}] dispatched for mobile: ${clean}`,
+      action: isEmail ? 'Dynamic Email OTP Dispatched' : 'Dynamic SMS OTP Dispatched',
+      details: `Generated 6-digit code [${otp}] dispatched for ${isEmail ? 'email: ' + clean : 'mobile: ' + clean}`,
       ip_address: '103.21.244.12',
       status: 'success',
     });
     return otp;
   }
 
-  public getActiveOtp(mobile: string): string | null {
-    const clean = mobile.replace(/\s+/g, '');
+  public getActiveOtp(identifier: string): string | null {
+    const isEmail = identifier.includes('@');
+    const clean = isEmail ? identifier.trim().toLowerCase() : identifier.replace(/\s+/g, '');
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem(`aethered_otp_${clean}`);
     }
     return null;
   }
 
-  public verifyOtp(mobile: string, enteredOtp: string): boolean {
-    const clean = mobile.replace(/\s+/g, '');
+  public verifyOtp(identifier: string, enteredOtp: string): boolean {
+    const isEmail = identifier.includes('@');
+    const clean = isEmail ? identifier.trim().toLowerCase() : identifier.replace(/\s+/g, '');
     const stored = this.getActiveOtp(clean);
     if (stored && stored === enteredOtp) {
       if (typeof window !== 'undefined') {
@@ -416,12 +424,14 @@ class SyncedDataStore {
     return false;
   }
 
-  public registerNewStudent(mobile: string, name?: string): Student {
-    const clean = mobile.replace(/\s+/g, '');
+  public registerNewStudent(identifier: string, name?: string): Student {
+    const isEmail = identifier.includes('@');
+    const clean = isEmail ? identifier.trim().toLowerCase() : identifier.replace(/\s+/g, '');
     const students = this.getStudents();
-    const existing = students.find(
-      (s) => s.mobile_number === clean || clean.endsWith(s.mobile_number.replace('+91', ''))
-    );
+    const existing = students.find((s) => {
+      if (isEmail) return s.email?.toLowerCase() === clean;
+      return s.mobile_number === clean || clean.endsWith(s.mobile_number.replace('+91', ''));
+    });
     if (existing) return existing;
 
     const lastDigits = clean.slice(-4);

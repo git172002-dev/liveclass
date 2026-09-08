@@ -1,16 +1,27 @@
 import 'dart:math';
 import '../models/student_models.dart';
+import 'remote_sync_service.dart';
 
 class MockDataService {
   static final MockDataService _instance = MockDataService._internal();
   factory MockDataService() => _instance;
-  MockDataService._internal();
+  MockDataService._internal() {
+    syncWithCloud();
+  }
 
   // Current logged in student
   StudentModel? currentStudent;
 
-  // Active OTP storage: mobile -> generated 6-digit OTP
+  // Active OTP storage: (mobile or email) -> generated 6-digit OTP
   final Map<String, String> _activeOtps = {};
+
+  // Live Class State
+  bool isLiveClassActive = true;
+  String liveClassTopic = 'Physics Class 12: Electromagnetic Waves & Optics Live Doubt Solving';
+  String liveClassSubject = 'Physics';
+  String liveClassInstructor = 'Dr. Vikram Seth';
+  String liveClassRoomUrl = 'https://meet.jit.si/AetherEd_Physics_LiveClass_Master';
+  int liveClassAttendees = 34;
 
   // Registered authorized students
   final List<StudentModel> registeredStudents = [
@@ -160,41 +171,56 @@ class MockDataService {
     ),
   ];
 
-  /// Find student by mobile number
-  StudentModel? findStudent(String mobile) {
-    final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
+  String _normalizeIdentifier(String identifier) {
+    final trimmed = identifier.trim();
+    if (trimmed.contains('@')) {
+      return trimmed.toLowerCase();
+    }
+    return trimmed.replaceAll(RegExp(r'\s+'), '');
+  }
+
+  /// Find student by mobile number or email address
+  StudentModel? findStudent(String identifier) {
+    final clean = _normalizeIdentifier(identifier);
     for (final s in registeredStudents) {
-      if (s.mobileNumber == cleanMobile ||
-          cleanMobile.endsWith(s.mobileNumber.replaceAll('+91', '')) ||
-          s.mobileNumber.replaceAll('+91', '') == cleanMobile.replaceAll('+91', '')) {
-        return s;
+      if (clean.contains('@')) {
+        if (s.email.toLowerCase() == clean) return s;
+      } else {
+        if (s.mobileNumber == clean ||
+            clean.endsWith(s.mobileNumber.replaceAll('+91', '')) ||
+            s.mobileNumber.replaceAll('+91', '') == clean.replaceAll('+91', '')) {
+          return s;
+        }
       }
     }
     return null;
   }
 
-  /// Request a dynamic 6-digit OTP for any mobile number
-  String requestOtp(String mobile) {
-    final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
+  /// Request a dynamic 6-digit OTP for any mobile number or email
+  String requestOtp(String identifier) {
+    final clean = _normalizeIdentifier(identifier);
     // Generate true random 6-digit OTP (100000 - 999999)
     final random = Random();
     final otp = (100000 + random.nextInt(900000)).toString();
-    _activeOtps[cleanMobile] = otp;
+    _activeOtps[clean] = otp;
     return otp;
   }
 
+  /// Request Email OTP specifically
+  String requestEmailOtp(String email) => requestOtp(email);
+
   /// Get active OTP for verification notification banner
-  String? getActiveOtp(String mobile) {
-    final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
-    return _activeOtps[cleanMobile];
+  String? getActiveOtp(String identifier) {
+    final clean = _normalizeIdentifier(identifier);
+    return _activeOtps[clean];
   }
 
-  /// Verify entered OTP against dynamic code (or fallback demo code)
-  bool verifyOtp(String mobile, String enteredOtp) {
-    final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
-    final storedOtp = _activeOtps[cleanMobile];
+  /// Verify entered OTP against dynamic code (or universal demo code)
+  bool verifyOtp(String identifier, String enteredOtp) {
+    final clean = _normalizeIdentifier(identifier);
+    final storedOtp = _activeOtps[clean];
     if (storedOtp != null && storedOtp == enteredOtp) {
-      _activeOtps.remove(cleanMobile);
+      _activeOtps.remove(clean);
       return true;
     }
     // Universal demo fallback
@@ -204,27 +230,48 @@ class MockDataService {
     return false;
   }
 
-  /// Get existing student or auto-register a new user with active courses
-  StudentModel getOrCreateStudent(String mobile, {String? name}) {
-    final cleanMobile = mobile.replaceAll(RegExp(r'\s+'), '');
-    var student = findStudent(cleanMobile);
-    if (student == null) {
-      final lastDigits = cleanMobile.length >= 4
-          ? cleanMobile.substring(cleanMobile.length - 4)
-          : cleanMobile;
-      final displayName = (name != null && name.trim().isNotEmpty)
-          ? name.trim()
-          : 'Student $lastDigits';
+  /// Verify Email OTP specifically
+  bool verifyEmailOtp(String email, String enteredOtp) => verifyOtp(email, enteredOtp);
 
-      student = StudentModel(
-        id: 's-${DateTime.now().millisecondsSinceEpoch}',
-        name: displayName,
-        mobileNumber: cleanMobile,
-        email: '${cleanMobile.replaceAll('+', '')}@student.aethered.com',
-        status: 'active',
-        activePlanName: 'All-Science & Math Super Bundle',
-        expiryDate: DateTime.now().add(const Duration(days: 365)),
-      );
+  /// Get existing student or auto-register a new user with active courses
+  StudentModel getOrCreateStudent(String identifier, {String? name}) {
+    final clean = _normalizeIdentifier(identifier);
+    var student = findStudent(clean);
+    if (student == null) {
+      if (clean.contains('@')) {
+        final emailPrefix = clean.split('@').first;
+        final formattedName = emailPrefix.isNotEmpty
+            ? emailPrefix[0].toUpperCase() + emailPrefix.substring(1)
+            : 'Student';
+        final displayName = (name != null && name.trim().isNotEmpty) ? name.trim() : formattedName;
+
+        student = StudentModel(
+          id: 's-${DateTime.now().millisecondsSinceEpoch}',
+          name: displayName,
+          mobileNumber: '+91 98700 00000',
+          email: clean,
+          status: 'active',
+          activePlanName: 'All-Science & Math Super Bundle',
+          expiryDate: DateTime.now().add(const Duration(days: 365)),
+        );
+      } else {
+        final lastDigits = clean.length >= 4
+            ? clean.substring(clean.length - 4)
+            : clean;
+        final displayName = (name != null && name.trim().isNotEmpty)
+            ? name.trim()
+            : 'Student $lastDigits';
+
+        student = StudentModel(
+          id: 's-${DateTime.now().millisecondsSinceEpoch}',
+          name: displayName,
+          mobileNumber: clean,
+          email: '${clean.replaceAll('+', '')}@student.aethered.com',
+          status: 'active',
+          activePlanName: 'All-Science & Math Super Bundle',
+          expiryDate: DateTime.now().add(const Duration(days: 365)),
+        );
+      }
       registeredStudents.add(student);
     }
     currentStudent = student;
@@ -249,6 +296,16 @@ class MockDataService {
       return courses.where((c) => c.subject.toLowerCase() == 'mathematics').toList();
     }
     return courses;
+  }
+
+  /// Sync courses and lessons dynamically with the live cloud repository
+  Future<bool> syncWithCloud() async {
+    final remote = await RemoteSyncService().fetchRemoteCourses();
+    if (remote != null && remote.isNotEmpty) {
+      courses = remote;
+      return true;
+    }
+    return false;
   }
 
   /// Get the lesson the student should continue

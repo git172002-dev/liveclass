@@ -118,4 +118,35 @@ class CourseModel {
     required this.lessons,
     this.continueLesson,
   });
+
+  factory CourseModel.fromJson(Map<String, dynamic> json) {
+    final rawLessons = json['lessons'] as List<dynamic>? ?? [];
+    final lessonsList = rawLessons.map((l) {
+      final map = l as Map<String, dynamic>;
+      return LessonModel(
+        id: map['id'] as String? ?? 'l-${DateTime.now().millisecondsSinceEpoch}',
+        courseId: map['course_id'] as String? ?? json['id'] as String? ?? '',
+        title: map['title'] as String? ?? 'Untitled Lesson',
+        description: map['description'] as String? ?? '',
+        videoReference: map['video_reference'] as String? ?? '',
+        durationSeconds: (map['duration_seconds'] as num?)?.toInt() ?? 2400,
+        sequence: (map['sequence'] as num?)?.toInt() ?? 1,
+        isCompleted: map['is_completed'] as bool? ?? false,
+        playbackPositionSeconds: (map['playback_position_seconds'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
+
+    return CourseModel(
+      id: json['id'] as String? ?? 'c-${DateTime.now().millisecondsSinceEpoch}',
+      title: json['title'] as String? ?? 'Untitled Course',
+      description: json['description'] as String? ?? '',
+      subject: json['subject'] as String? ?? 'General',
+      instructor: json['instructor'] as String? ?? 'Lead Faculty',
+      thumbnailUrl: json['thumbnail_url'] as String? ??
+          'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?auto=format&fit=crop&w=800&q=80',
+      totalLessons: lessonsList.isNotEmpty ? lessonsList.length : ((json['total_lessons'] as num?)?.toInt() ?? 0),
+      completionPercentage: (json['completion_percentage'] as num?)?.toDouble() ?? 0.0,
+      lessons: lessonsList,
+    );
+  }
 }

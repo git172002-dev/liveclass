@@ -13,10 +13,12 @@ import {
   Sparkles,
   ExternalLink,
   ShieldCheck,
+  Radio,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Live Class Studio", href: "/dashboard/live", icon: Radio, isLive: true },
   { name: "Students", href: "/dashboard/students", icon: Users },
   { name: "Courses & Video Portal", href: "/dashboard/courses", icon: Video },
   { name: "Subscriptions & Access", href: "/dashboard/subscriptions", icon: KeyRound },
@@ -65,14 +67,21 @@ export default function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 shadow-sm shadow-cyan-500/10"
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-cyan-400" : "text-slate-400"}`} />
-                <span>{item.name}</span>
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-4 h-4 ${isActive ? "text-cyan-400" : "text-slate-400"}`} />
+                  <span>{item.name}</span>
+                </div>
+                {item.isLive && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse">
+                    LIVE
+                  </span>
+                )}
               </Link>
             );
           })}

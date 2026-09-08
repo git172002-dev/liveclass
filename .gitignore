@@ -17,6 +17,7 @@ node_modules/
 out/
 build/
 dist/
+*.apk
 
 # Flutter & Dart
 .dart_tool/

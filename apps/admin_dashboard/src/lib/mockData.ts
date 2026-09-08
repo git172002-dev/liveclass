@@ -19,6 +19,8 @@ export interface Lesson {
   duration_seconds: number;
   sequence: number;
   status: 'published' | 'draft';
+  playback_position_seconds?: number;
+  is_completed?: boolean;
 }
 
 export interface Course {
