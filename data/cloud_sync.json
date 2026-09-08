@@ -1,1 +1,5 @@
-{"status": "initialized", "updated_at": "2026-09-08"}
+{
+  "version": 1,
+  "last_updated": "2026-09-08T14:20:00Z",
+  "courses_count": 3
+}
