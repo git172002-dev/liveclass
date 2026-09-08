@@ -42,9 +42,9 @@ class RemoteSyncService {
           final jsonMap = jsonDecode(responseBody) as Map<String, dynamic>;
 
           if (jsonMap.containsKey('content')) {
-            final rawBase64 = (jsonMap['content'] as String).replaceAll('
-', '').replaceAll('', '');
-            final decodedJson = utf8.decode(base64Decode(rawBase64));
+            final rawContent = jsonMap['content'] as String;
+            final cleanBase64 = rawContent.replaceAll(RegExp(r'\s+'), '');
+            final decodedJson = utf8.decode(base64Decode(cleanBase64));
             final parsedData = jsonDecode(decodedJson) as Map<String, dynamic>;
 
             if (parsedData.containsKey('courses')) {

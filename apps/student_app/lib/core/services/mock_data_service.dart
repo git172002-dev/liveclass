@@ -184,7 +184,7 @@ class MockDataService {
     final clean = _normalizeIdentifier(identifier);
     for (final s in registeredStudents) {
       if (clean.contains('@')) {
-        if (s.email.toLowerCase() == clean) return s;
+        if (s.email?.toLowerCase() == clean) return s;
       } else {
         if (s.mobileNumber == clean ||
             clean.endsWith(s.mobileNumber.replaceAll('+91', '')) ||
