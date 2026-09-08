@@ -1,5 +1,119 @@
 {
   "version": 1,
-  "last_updated": "2026-09-08T14:20:00Z",
-  "courses_count": 3
+  "last_updated": "2026-09-08T14:25:00Z",
+  "courses": [
+    {
+      "id": "c0000000-0000-0000-0000-000000000001",
+      "title": "Physics Class 12: Electromagnetism & Wave Optics",
+      "subject": "Physics",
+      "instructor": "Dr. Vikram Seth",
+      "description": "Master electromagnetic induction, alternating currents, wave nature of light, and interference with conceptual breakdowns and solved problem sets.",
+      "thumbnail_url": "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?auto=format&fit=crop&w=800&q=80",
+      "total_lessons": 4,
+      "completion_percentage": 0.35,
+      "lessons": [
+        {
+          "id": "l0000000-0000-0000-0000-000000000001",
+          "course_id": "c0000000-0000-0000-0000-000000000001",
+          "title": "01. Introduction to Magnetic Fields & Biot-Savart Law",
+          "description": "Fundamental properties of magnetic vectors, current elements, and magnetic field calculations.",
+          "video_reference": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          "duration_seconds": 2400,
+          "sequence": 1,
+          "is_completed": true,
+          "playback_position_seconds": 2300
+        },
+        {
+          "id": "l0000000-0000-0000-0000-000000000002",
+          "course_id": "c0000000-0000-0000-0000-000000000001",
+          "title": "02. Ampere Circuital Law & Solenoid Fields",
+          "description": "Line integral of magnetic flux density, symmetry analysis in solenoids, and toroid calculations.",
+          "video_reference": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+          "duration_seconds": 2700,
+          "sequence": 2,
+          "is_completed": false,
+          "playback_position_seconds": 1122
+        },
+        {
+          "id": "l0000000-0000-0000-0000-000000000003",
+          "course_id": "c0000000-0000-0000-0000-000000000001",
+          "title": "03. Electromagnetic Induction & Faraday Laws",
+          "description": "Magnetic flux changes, induced EMF, Lenz law application, and eddy current damping.",
+          "video_reference": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+          "duration_seconds": 3120,
+          "sequence": 3,
+          "is_completed": false,
+          "playback_position_seconds": 0
+        },
+        {
+          "id": "l0000000-0000-0000-0000-000000000004",
+          "course_id": "c0000000-0000-0000-0000-000000000001",
+          "title": "04. Wave Optics: Huygens Principle & Wavefronts",
+          "description": "Secondary wavelets, derivation of reflection and refraction using wavefront propagation.",
+          "video_reference": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+          "duration_seconds": 1980,
+          "sequence": 4,
+          "is_completed": false,
+          "playback_position_seconds": 0
+        }
+      ]
+    },
+    {
+      "id": "c0000000-0000-0000-0000-000000000002",
+      "title": "Chemistry Class 12: Chemical Kinetics & Organic Synthesis",
+      "subject": "Chemistry",
+      "instructor": "Prof. Ananya Roy",
+      "description": "In-depth recorded modules covering rate equations, collision theory, reaction mechanisms, and multi-step organic synthesis paths.",
+      "thumbnail_url": "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80",
+      "total_lessons": 2,
+      "completion_percentage": 0.0,
+      "lessons": [
+        {
+          "id": "l0000000-0000-0000-0000-000000000010",
+          "course_id": "c0000000-0000-0000-0000-000000000002",
+          "title": "01. Rate of Reaction & Rate Law Determination",
+          "description": "Instantaneous versus average reaction rates, differential rate laws, and reaction orders.",
+          "video_reference": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+          "duration_seconds": 2100,
+          "sequence": 1,
+          "is_completed": false,
+          "playback_position_seconds": 0
+        },
+        {
+          "id": "l0000000-0000-0000-0000-000000000011",
+          "course_id": "c0000000-0000-0000-0000-000000000002",
+          "title": "02. Arrhenius Equation & Activation Energy Analysis",
+          "description": "Temperature dependence of rate constants, Arrhenius plots, and catalytic energy profiles.",
+          "video_reference": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4",
+          "duration_seconds": 2550,
+          "sequence": 2,
+          "is_completed": false,
+          "playback_position_seconds": 0
+        }
+      ]
+    },
+    {
+      "id": "c0000000-0000-0000-0000-000000000003",
+      "title": "Mathematics Class 12: Advanced Calculus & Differential Equations",
+      "subject": "Mathematics",
+      "instructor": "K. Ramachandran",
+      "description": "Calculus masterclass covering limits, definite integrals, differential modeling, and graphical curve analysis.",
+      "thumbnail_url": "https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=800&q=80",
+      "total_lessons": 1,
+      "completion_percentage": 0.0,
+      "lessons": [
+        {
+          "id": "l0000000-0000-0000-0000-000000000020",
+          "course_id": "c0000000-0000-0000-0000-000000000003",
+          "title": "01. Limits, Continuity & Derivative Foundations",
+          "description": "Epsilon-delta definitions, standard limits, and continuity on closed intervals.",
+          "video_reference": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+          "duration_seconds": 2800,
+          "sequence": 1,
+          "is_completed": false,
+          "playback_position_seconds": 0
+        }
+      ]
+    }
+  ]
 }
